@@ -5,7 +5,7 @@ yle-dl (1.99.7-0+jackyf1) UNRELEASED; urgency=low
     - Build and link librtmp statically as new README suggests.
     - Install only 'yle-dl' and 'rtmpdump' executables.
   * debian/control:
-    - Changed source and binary package names to 'yle-dl'.
+    - Changed source and main binary package names to 'yle-dl'.
     - More user-targeted short description.
     - Build-depend on debhelper >= 7.0.50~, because overrides are used.
     - Bumped Standards-Version to 3.9.3, no changes needed.
@@ -13,7 +13,6 @@ yle-dl (1.99.7-0+jackyf1) UNRELEASED; urgency=low
       require it.
     - Don't build-depend on libjson0-dev anymore.
     - Build-depend on libltdl-dev.
-    - Provide rtmpdump.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 26 May 2012 14:39:44 +0300
 
