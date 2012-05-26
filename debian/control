@@ -3,7 +3,7 @@ Priority: extra
 Section: net
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Build-Depends: debhelper (>= 7.0.50~), libjson0-dev, libgnutls-dev, libgcrypt11-dev
-Standards-Version: 3.9.1
+Standards-Version: 3.9.3
 
 Package: yle-dl
 Architecture: any
