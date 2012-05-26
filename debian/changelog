@@ -1,0 +1,29 @@
+rtmpdump-yle (1.4.6-0+jackyf1) UNRELEASED; urgency=low
+
+  * New release.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 18 Jan 2012 21:25:32 +0200
+
+rtmpdump-yle (1.4.2.jackyf1-0+jackyf1) UNRELEASED; urgency=low
+
+  * New release
+
+ -- Antti Ajanki <antti.ajanki@iki.fi>  Thu, 26 May 2011 19:57:15 +0300
+
+rtmpdump-yle (1.4.1.jackyf1-0+jackyf1) UNRELEASED; urgency=low
+
+  * New release
+
+ -- Antti Ajanki <antti.ajanki@iki.fi>  Tue, 22 Feb 2011 19:36:53 +0200
+
+rtmpdump-yle (1.4.0.jackyf1-0+jackyf1) UNRELEASED; urgency=low
+
+  * New release.
+
+ -- Antti Ajanki <antti.ajanki@iki.fi>  Wed, 09 Feb 2011 20:17:14 +0200
+
+rtmpdump-yle (1.3.1.jackyf1-0+jackyf1) UNRELEASED; urgency=low
+
+  * Initial import.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 16 Nov 2010 19:50:47 +0200
