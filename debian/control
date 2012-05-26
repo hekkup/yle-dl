@@ -1,11 +1,11 @@
-Source: rtmpdump-yle
+Source: yle-dl
 Priority: extra
 Section: net
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Build-Depends: debhelper (>= 7), libjson0-dev, libgnutls-dev, libgcrypt11-dev
 Standards-Version: 3.9.1
 
-Package: rtmpdump-yle
+Package: yle-dl
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, python
 Description: rtmpdump for YLE videos

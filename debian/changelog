@@ -1,8 +1,10 @@
-rtmpdump-yle (1.99.7-0+jackyf1) UNRELEASED; urgency=low
+yle-dl (1.99.7-0+jackyf1) UNRELEASED; urgency=low
 
   * New release.
   * debian/rules:
     - Build and link librtmp statically as new README suggests.
+  * debian/control:
+    - Changed source and binary package names to 'yle-dl'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 26 May 2012 14:39:44 +0300
 
