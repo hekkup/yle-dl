@@ -7,4 +7,5 @@ override_dh_auto_build:
 	dh_auto_build -- prefix=/usr SHARED= CRYPTO=GNUTLS LIB_RTMP="librtmp/librtmp.a -lltdl -rdynamic"
 
 override_dh_auto_install:
-	dh_auto_install -- prefix=/usr SHARED=
+	dh_auto_install -- prefix=/usr DESTDIR=$(CURDIR)/debian/tmp SHARED=
+	dh_install --autodest usr/bin/yle-dl usr/bin/rtmpdump
