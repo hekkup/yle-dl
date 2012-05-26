@@ -11,6 +11,7 @@ yle-dl (1.99.7-0+jackyf1) UNRELEASED; urgency=low
     - Build-depend on nettle instead of libgcrypt, as new rtmpdump seem to
       require it.
     - Don't build-depend on libjson0-dev anymore.
+    - Build-depend on libltdl-dev.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 26 May 2012 14:39:44 +0300
 
