@@ -1,3 +1,9 @@
+yle-dl (1.99.7+20120605+git479cafec-0+jackyf1~) UNRELEASED; urgency=low
+
+  * New upstream snapshot.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 06 Jun 2012 12:53:30 +0300
+
 yle-dl (1.99.7-0+jackyf1) UNRELEASED; urgency=low
 
   * New release.
