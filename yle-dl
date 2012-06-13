@@ -30,21 +30,10 @@ import codecs
 import base64
 from Crypto.Cipher import AES
 
-version = "1.99.8 (2.0 beta 8)"
+version = "1.99.9 (2.0 RC 1)"
 
-AREENA_NG_RTMP = 'rtmp://flashk.yle.fi/mediakanta//x'
-# x above is a placeholder, yle plugin will construct the real playpath.
-# Two slashes after mediakanta is similar to what YLE player does.
 AREENA_NG_SWF = 'http://areena.yle.fi/static/player/1.2.8/flowplayer/flowplayer.commercial-3.2.7-encrypted.swf'
-AREENA_NG_TCURL = 'rtmp://flashk.yle.fi/mediakanta/'
-AREENA_NG_CLIP_TEMPLATE = 'http://areena.yle.fi/%s/%s'
 AREENA_NG_HTTP_HEADERS = {'User-Agent': 'yle-dl/' + version.split(' ')[0]}
-
-AREENA_LIVE_SWF = 'http://areena.yle.fi/player/Application.swf?build=2'
-AREENA_LIVE_TCURL = 'rtmp://flashk.yle.fi/AreenaServer'
-
-AREENA_RADIO_SWF = 'http://static.yle.fi/global/player/version/1.2.7/flowplayer/flowplayer.commercial-3.2.7-encrypted.swf'
-AREENA_RADIO_TCURL = 'rtmp://flashu.yle.fi/AreenaServer/'
 
 ARKISTO_SWF = 'http://yle.fi/elavaarkisto/flowplayer/flowplayer.commercial-3.2.7.swf?0.7134730119723827'
 RTMPDUMP_OPTIONS_ARKISTO = ['-s', ARKISTO_SWF, '-m', '60']
@@ -177,10 +166,13 @@ def execute_rtmpdump(args):
     completion."""
     if debug:
         log('Executing:')
-        log(' '.join(x.decode('UTF-8') for x in args))
+        log(' '.join(args))
+
+    enc = sys.getfilesystemencoding()
+    encoded_args = [x.encode(enc, 'replace') for x in args]
 
     try:
-        rtmpdump_process = subprocess.Popen(args)
+        rtmpdump_process = subprocess.Popen(encoded_args)
         return rtmpdump_process.wait()
     except KeyboardInterrupt:
         try:
@@ -200,11 +192,6 @@ def downloader_factory(url):
         return ElavaArkistoDownloader()
     elif url.startswith('http://ylex.yle.fi/'):
         return YleXDownloader()
-    elif url.startswith('http://areena.yle.fi/player/index.php?'):
-        return AreenaNGLiveDownloader()
-    elif url.startswith('http://areena.yle.fi/radio/soitin/') or \
-         url == 'http://yle.fi/puhe/live':
-        return AreenaRadioDownloader()
     else:
         return AreenaNGDownloader()
 
@@ -215,7 +202,7 @@ def get_output_filename(args_in):
         opt = args.pop()
         if opt in ('-o', '--flv'):
             if prev:
-                return prev.decode(sys.getfilesystemencoding())
+                return prev
             else:
                 return None
         prev = opt
@@ -226,13 +213,14 @@ def is_resume_job(args):
 
 def next_available_filename(proposed):
     i = 1
-    filename = proposed 
+    enc = sys.getfilesystemencoding()
+    filename = proposed.encode(enc, 'replace')
     basename, ext = os.path.splitext(proposed)
     while os.path.exists(filename):
         log(u'%s exists, trying an alternative name' % filename)
         filename = basename + '-' + str(i) + ext
         i += 1
-    return filename
+    return filename.decode('UTF-8', 'replace')
 
 def which(program):
     """Search for program on $PATH and return the full path if found."""
@@ -313,113 +301,41 @@ class AreenaNGDownloader:
             return RD_FAILED
 
         for clip in playlist:
-            res = self.process_single_episode(clip, parameters, sublang, destdir, print_url)
+            res = self.process_single_episode(clip, url, parameters,
+                                              sublang, destdir, print_url)
             if res != RD_SUCCESS:
                 return res
 
         return RD_SUCCESS
 
-    def process_single_episode(self, url, parameters, sublang, destdir, print_url):
-        """Extracts Areena player params from a web page at url and
-        starts a rtmpdump process."""
-        areenaparams = self.get_areena_params(url)
-        if not areenaparams:
+    def process_single_episode(self, clip, pageurl, parameters,
+                               sublang, destdir, print_url):
+        """Construct clip parameters and starts a rtmpdump process."""
+        rtmpparams = self.get_rtmp_parameters(clip, pageurl)
+        if not rtmpparams:
             return RD_FAILED
-
-        if areenaparams.has_key('title'):
-            filename = areenaparams['title']
-            date = areenaparams.get('broadcasted', None) or \
-                   areenaparams.get('productionDate', None)
-            if date:
-                filename += '-' + date.replace('/', '-').replace(' ', '-')
-            filename = sane_filename(filename)
-            filename += '.flv'
-        else:
-            filename = 'areena.flv'
-
-        if destdir:
-            filename = os.path.join(destdir, filename)
-
-        if areenaparams.get('live', '') == 'true':
-            islive = ' live=1'
-        else:
-            islive = ''
-        
-        papiurl = 'http://papi.yle.fi/ng/mod/rtmp/' + areenaparams['id']
-        papi = download_page(papiurl)
-        papi_decoded = self.decode_papi(papi)
-
-        if debug:
-            log(papi_decoded)
-
-        try:
-            papi_xml = xml.dom.minidom.parseString(papi_decoded)
-        except Exception as exc:
-            print exc
-            return RD_FAILED
-
-        nodelist = papi_xml.getElementsByTagName('connect')
-        if len(nodelist) != 1 or len(nodelist[0].childNodes) != 1:
-            return RD_FAILED
-        rtmp_connect = nodelist[0].firstChild.nodeValue
-
-        nodelist = papi_xml.getElementsByTagName('stream')
-        if len(nodelist) != 1 or len(nodelist[0].childNodes) != 1:
-            return RD_FAILED
-        rtmp_stream = nodelist[0].firstChild.nodeValue
-
-        parsed_rtmp = urlparse.urlparse(rtmp_connect)
-        edgefcs = parsed_rtmp.netloc
-        ident = download_page('http://%s/fcs/ident' % edgefcs)
-        if ident is None:
-            return RD_FAILED
-
-        if debug:
-            log(ident)
-
-        try:
-            identxml = xml.dom.minidom.parseString(ident)
-        except Exception as exc:
-            print exc
-            return RD_FAILED
-
-        nodelist = identxml.getElementsByTagName('ip')
-        if len(nodelist) != 1 or len(nodelist[0].childNodes) != 1:
-            return RD_FAILED
-        rtmp_ip = nodelist[0].firstChild.nodeValue
-
-        app_without_fcsvhost = parsed_rtmp.path.lstrip('/')
-        baseapp, auth = app_without_fcsvhost.split('?', 1)
-        app = '%s?_fcs_vhost=%s&%s' % (baseapp, edgefcs, auth)
-
-        rtmpbase = 'rtmpe://%s/ondemand' % edgefcs
-        tcurl = 'rtmpe://%s/%s' % (rtmp_ip, app)
-
-        rtmpurl = '%s app=%s playpath=%s tcUrl=%s pageUrl=%s swfUrl=%s swfVfy=1' % \
-                  (rtmpbase, app, rtmp_stream, tcurl,
-                   url, AREENA_NG_SWF)
 
         if print_url:
-            print rtmpurl
+            enc = sys.getfilesystemencoding()
+            print self.rtmp_parameters_to_url(rtmpparams).encode(enc, 'replace')
             return RD_SUCCESS
 
-        enc = sys.getfilesystemencoding()
         outputparam = []
         if '-o' not in parameters and '--flv' not in parameters:
+            filename = self.get_clip_filename(clip, destdir)
             if not is_resume_job(parameters):
                 filename = next_available_filename(filename)
-            outputparam = ['-o', filename.encode(enc, 'replace')]
+            outputparam = ['-o', filename]
 
         args = [rtmpdump_binary]
-        args += ['-r', rtmpurl.encode(enc)]
-        args += parameters
+        args += self.rtmp_parameters_to_rtmpdump_args(rtmpparams)
         args += outputparam
-        if islive:
-            args += ['--live']
+        args += parameters
 
         outputfile = get_output_filename(args)
-        if areenaparams.has_key('subtitles'):
-            self.download_subtitles(areenaparams['subtitles'], sublang, outputfile)
+        media = clip.get('media', {})
+        if media.has_key('subtitles'):
+            self.download_subtitles(media['subtitles'], sublang, outputfile)
 
         log_output_file(outputfile)
 
@@ -430,6 +346,180 @@ class AreenaNGDownloader:
         log_output_file(outputfile, True)
 
         return retcode
+
+    def rtmp_parameters_to_url(self, params):
+        components = [params['rtmp']]
+        for key, value in params.iteritems():
+            if key != 'rtmp':
+                components.append('%s=%s' % (key, value))
+        return ' '.join(components)
+
+    def rtmp_parameters_to_rtmpdump_args(self, params):
+        args = []
+        for key, value in params.iteritems():
+            if key == 'live':
+                args.append('--live')
+            else:
+                args.append('--%s=%s' % (key, value))
+        return args
+
+    def get_clip_filename(self, clip, destdir):
+        if 'channel' in clip:
+            # Live radio broadcast
+            curtime = time.strftime('-%Y-%m-%d-%H:%M:%S')
+            filename = clip['channel'].get('name', 'yle-radio') + curtime + '.flv'
+
+        elif 'title' in clip:
+            # Video or radio stream
+            filename = clip['title']
+            date = None
+            broadcasted = clip.get('broadcasted', None)
+            if broadcasted:
+                date = broadcasted.get('date', None)
+            if not date:
+                date = clip.get('published', None)
+            if date:
+                filename += '-' + date.replace('/', '-').replace(' ', '-')
+            filename += '.flv'
+
+        else:
+            filename = 'areena.flv'
+
+        filename = sane_filename(filename)
+
+        if destdir:
+            filename = os.path.join(destdir, filename)
+            
+        return filename
+
+    def get_rtmp_parameters(self, clip, pageurl):
+        if 'channel' in clip:
+            return self.get_liveradio_rtmp_parameters(clip, pageurl)
+        else:
+            return self.get_tv_rtmp_parameters(clip, pageurl)
+
+    def get_tv_rtmp_parameters(self, clip, pageurl):
+        # Search results don't have the media item so we have to
+        # download clip metadata from the source.
+        if not clip.has_key('media'):
+            clip = self.get_metadata(clip)
+            if not clip:
+                return None
+        
+        media = clip.get('media', {})
+        if not media:
+            return None
+        
+        if media.get('live', False) == True:
+            islive = True
+            papiurl = 'http://papi.yle.fi/ng/live/rtmp/' + media['id'] + '/fin'
+        else:
+            islive = False
+            papiurl = 'http://papi.yle.fi/ng/mod/rtmp/' + media['id']
+
+        return self.rtmp_parameters_from_papi(papiurl, pageurl, islive)
+
+    def get_liveradio_rtmp_parameters(self, clip, pageurl):
+        channel = clip.get('channel', {})
+        lang = channel.get('lang', 'fi')
+        radioid = channel.get('id', None)
+        if not radioid:
+            return None
+
+        papiurl = 'http://papi.yle.fi/ng/radio/rtmp/%s/%s' % (radioid, lang)
+        return self.rtmp_parameters_from_papi(papiurl, pageurl, True)
+
+    def rtmp_parameters_from_papi(self, papiurl, pageurl, islive):
+        papi = download_page(papiurl)
+        if not papi:
+            return None
+        
+        papi_decoded = self.decode_papi(papi)
+
+        if debug:
+            log(papi_decoded)
+
+        try:
+            papi_xml = xml.dom.minidom.parseString(papi_decoded)
+        except Exception as exc:
+            log(unicode(exc, 'utf-8'))
+            return None
+
+        nodelist = papi_xml.getElementsByTagName('connect')
+        if len(nodelist) != 1 or len(nodelist[0].childNodes) != 1:
+            return None
+        rtmp_connect = nodelist[0].firstChild.nodeValue
+
+        nodelist = papi_xml.getElementsByTagName('stream')
+        if len(nodelist) != 1 or len(nodelist[0].childNodes) != 1:
+            return None
+        rtmp_stream = nodelist[0].firstChild.nodeValue
+
+        (scheme, edgefcs, rtmppath) = \
+                 urlparse.urlparse(rtmp_connect)[:3]
+
+        # Workaround for OS X
+        if edgefcs == '':
+            try:
+                scheme, ign, edgefcs, rtmppath = rtmp_connect.split('/', 3)
+                scheme = scheme.rstrip(':')
+            except ValueError:
+                return None
+        
+        ident = download_page('http://%s/fcs/ident' % edgefcs)
+        if ident is None:
+            return None
+
+        if debug:
+            log(ident)
+
+        try:
+            identxml = xml.dom.minidom.parseString(ident)
+        except Exception as exc:
+            log(unicode(exc, 'utf-8'))
+            return None
+
+        nodelist = identxml.getElementsByTagName('ip')
+        if len(nodelist) != 1 or len(nodelist[0].childNodes) != 1:
+            return None
+        rtmp_ip = nodelist[0].firstChild.nodeValue
+
+        app_without_fcsvhost = rtmppath.lstrip('/')
+        app_fields = app_without_fcsvhost.split('?', 1)
+        baseapp = app_fields[0]
+        if len(app_fields) > 1:
+            auth = app_fields[1]
+        else:
+            auth = ''
+        app = '%s?_fcs_vhost=%s&%s' % (baseapp, edgefcs, auth)
+
+        rtmpbase = urlparse.urlunparse((scheme, edgefcs, baseapp, None, None, None))
+        tcurl = '%s://%s/%s' % (scheme, rtmp_ip, app)
+
+        rtmpparams = {'rtmp': rtmpbase,
+                      'app': app,
+                      'playpath': rtmp_stream,
+                      'tcUrl': tcurl,
+                      'pageUrl': pageurl,
+                      'swfUrl': AREENA_NG_SWF}
+        if islive:
+            rtmpparams['live'] = '1'
+
+        return rtmpparams
+
+    def get_metadata(self, clip):
+        jsonurl = self.create_pageurl(clip) + '.json'
+        jsonstr = download_page(jsonurl)
+        if not jsonstr:
+            return None
+
+        try:
+            clipjson = json.loads(jsonstr)
+        except ValueError:
+            log(u'Invalid JSON file at ' +  jsonurl)
+            return None
+        
+        return clipjson
 
     def decode_papi(self, papi):
         try:
@@ -446,9 +536,18 @@ class AreenaNGDownloader:
         return decrypter.decrypt(ciphertext)[:-padlen]
 
     def get_playlist(self, url, latest_episode):
+        if url == 'http://yle.fi/puhe/live':
+            # Radio Puhe uses non-standard metadta location, hardcode
+            # the values here.
+            return [{'channel': {'lang': 'fi',
+                                 'name': 'Yle Radio Puhe',
+                                 'id': '48'}}]
+        
         (scheme, netloc, path, params, query, fragment) = urlparse.urlparse(url)
         episodeurl = urlparse.urlunparse((scheme, netloc, path + '.json', params, query, ''))
         jsonstr = download_page(episodeurl)
+        if not jsonstr:
+            return None
 
         if debug:
             log(jsonstr)
@@ -459,107 +558,30 @@ class AreenaNGDownloader:
             log(u'Invalid JSON file at ' +  episodeurl)
             return None
 
-        if fulldata.get('contentType', '') in ['EPISODE', 'PROGRAM', 'CLIP']:
-            # This is a single episode page
-            return [url]
+        playlist = []
+        if 'contentType' in fulldata or 'channel' in fulldata:
+            playlist = [fulldata]
+        elif 'search' in fulldata:
+            playlist = fulldata['search'].get('results', [])
+        elif 'availableEpisodes' in fulldata:
+            playlist = fulldata['availableEpisodes'].get('video', []) + \
+                       fulldata['availableEpisodes'].get('audio', [])
 
+        if latest_episode:
+            playlist = playlist[-1:]
+
+        return playlist
+
+    def create_pageurl(self, media):
+        if 'type' not in media or 'id' not in media:
+            return ''
+
+        if media['type'] == 'audio':
+            urltype = 'radio'
         else:
-            # The page contains several episodes
-            if fulldata.has_key('availableEpisodes'):
-                available_episodes = fulldata['availableEpisodes']
-                episodes = available_episodes.get('video', []) + \
-                           available_episodes.get('audio', [])
-            else:
-                episodes = fulldata.get('search', {}).get('results', [])
-
-            playlist = []
-            for clip in episodes:
-                if not clip.has_key('id') or not clip.has_key('type'):
-                    continue
-
-                if clip['type'] == 'audio':
-                    urltype = 'radio'
-                else:
-                    urltype = 'tv'
-
-                playlist.append(AREENA_NG_CLIP_TEMPLATE % (urltype, clip['id']))
-
-            if not playlist:
-                log(u'Error: can\'t find streams at ' + url)
-                return None
-
-            if latest_episode:
-                playlist = [playlist[0]]
-
-            return playlist
-
-    def get_areena_params(self, url):
-        """Download a web page at url and return Areena parameters
-        extracted from it."""
-        html = download_page(url)
-        if html is None:
-            return None
-
-        areenaparams = self.extract_params(html)
-        if areenaparams is None:
-            log(u"Can't find clip parameters.")
-            log(u"Is %s really a YLE Areena video page?" % url)
-            return None
-
-        return areenaparams
-
-    def extract_params(self, html):
-        m = re.search(r'<script>.*?AREENA.clip\s*=\s*(.*?})\s*?$',
-                      html, re.DOTALL | re.MULTILINE)
-        if not m:
-            return None
-
-        params = self.parse_JS_object(m.group(1))
-
-        if not params or not params.has_key('id'):
-            return None
-        else:
-            return params
-
-    def parse_JS_object(self, jsobj):
-        """Convert a Javascript object into a Python object."""
-
-        # First convert into JSON and then apply JSON parser. The
-        # following is tuned for Areena HTML and will very likely break
-        # on other inputs.
-        x = ' '.join(self.convert_tokens(jsobj))
-        try:
-            return json.loads(x)
-        except ValueError:
-            log('Invalid JSON')
-            return None
-
-    def convert_tokens(self, data):
-        """Rudimentary generator that reads Javascript data and yields
-        JSONified tokens"""
-        while True:
-            data = data.lstrip()
-            if not data:
-                raise StopIteration
-            elif re.match(r'[]:,{}[]', data):
-                yield data[0]
-                data = data[1:]
-            elif data.startswith("'"):
-                if data[1] == "'":
-                    yield '""'
-                    data = data[2:]
-                else:
-                    data = data[1:]
-                    m = re.search(r"[^\\]'", data)
-                    s = data[:m.start()+1]
-                    s = s.replace("\\'", "'")
-                    s = re.sub(r'([^\\])"', '\g<1>\\"', s)
-                    yield '"%s"' % s
-                    data = data[m.end():]
-            else:
-                m = re.match(r"([a-zA-Z0-9_]+)", data)
-                yield '"%s"' % m.group(1)
-                data = data[m.end():]
+            urltype = 'tv'
+        
+        return 'http://areena.yle.fi/%s/%s' % (urltype, media['id'])
 
     def download_subtitles(self, available_subtitles, preferred_lang, videofilename):
         basename = os.path.splitext(videofilename)[0]
@@ -571,7 +593,8 @@ class AreenaNGDownloader:
                 if url:
                     try:
                         subtitlefile = basename + '.' + lang + '.srt'
-                        urllib.urlretrieve(url, subtitlefile)
+                        enc = sys.getfilesystemencoding()
+                        urllib.urlretrieve(url, subtitlefile.encode(enc, 'replace'))
                         self.add_BOM(subtitlefile)
                         log(u'Subtitles saved to ' + subtitlefile)
                         if preferred_lang != 'all':
@@ -585,306 +608,16 @@ class AreenaNGDownloader:
 
         Assumes (but does not check!) that the file is UTF-8 encoded.
         """
-        content = open(filename, 'r').read()
+        enc = sys.getfilesystemencoding()
+        encoded_filename = filename.encode(enc, 'replace')
+        content = open(encoded_filename, 'r').read()
         if content.startswith(codecs.BOM_UTF8):
             return
         
-        f = open(filename, 'w')
+        f = open(encoded_filename, 'w')
         f.write(codecs.BOM_UTF8)
         f.write(content)
         f.close()
-
-
-### Areena live ###
-
-class AreenaNGLiveDownloader:
-    def download_episodes(self, url, parameters, latest_episode, sublang, destdir):
-        """Download episode at url."""
-        return self.process_episodes(url, parameters, destdir, False)
-
-    def print_urls(self, url, latest_episode, sublang='all'):
-        """Extract episodes from url and print their
-        librtmp-compatible URLs on stdout."""
-        return self.process_episodes(url, [], None, True)
-
-    def process_episodes(self, url, parameters, destdir, print_url):
-        streamid, language = self.extract_stream_id(url)
-        if streamid is None:
-            return RD_FAILED
-
-        metadata = self.get_metadata(streamid, language)
-        if not metadata:
-            return RD_FAILED
-
-        is_akamai_stream = metadata.get('akamai', False)
-        if is_akamai_stream:
-            rtmpurl = self.get_akamai_rtmp_url(metadata, url)
-        else:
-            rtmpurl = self.get_areena_live_rtmp_url(metadata, url)
-        
-        if not rtmpurl:
-            return RD_FAILED
-
-        if print_url:
-            print rtmpurl
-            return RD_SUCCESS
-
-        enc = sys.getfilesystemencoding()
-        outputparam = []
-        if '-o' not in parameters and '--flv' not in parameters:
-            filename = self.create_output_filename(metadata, destdir)
-            outputparam = ['-o', filename.encode(enc, 'replace')]
-
-        args = [rtmpdump_binary]
-        args += ['-r', rtmpurl.encode(enc)]
-        args += parameters
-        args += outputparam
-        if ' live=1' in rtmpurl:
-            args.append('--live')
-
-        outputfile = get_output_filename(args)
-        log_output_file(outputfile)
-
-        retcode = execute_rtmpdump(args)
-        if retcode != RD_SUCCESS:
-            return retcode
-
-        log_output_file(outputfile, True)
-
-        return RD_SUCCESS
-
-    def get_xml_nodes(self, xmlurl, nodenames):
-        """Download XML file from xmlurl and parse first-level childs
-        named in nodenames."""
-        xmlstr = download_page(xmlurl)
-        if not xmlstr:
-            return None
-
-        try:
-            xmldoc = xml.dom.minidom.parseString(xmlstr)
-        except Exception:
-            return None
-
-        rootnode = xmldoc.documentElement
-        if rootnode is None:
-            return None
-
-        res = {}
-        for nodename in nodenames:
-            try:
-                res[nodename] = rootnode.getElementsByTagName(nodename)[0].firstChild.nodeValue
-            except IndexError:
-                pass
-
-        return res
-        
-    def extract_stream_id(self, url):
-        """Extract stream ID from the live stream URL."""
-        query = urlparse.urlparse(url).query
-        qdict = urlparse.parse_qs(query)
-        if 'stream' not in qdict:
-            log('No stream ID in URL')
-            return None, None
-        
-        streamid = qdict['stream'][0]
-        language = qdict.get('language', ['fi'])[0]
-
-        return (streamid, language)
-
-    def get_metadata(self, streamid, language):
-        """Download and parse metadata."""
-        metaurl = 'http://areena.yle.fi/meta/streams/info/%s/lang/%s' % (streamid, language)
-        metadata_json = download_page(metaurl)
-        if not metadata_json:
-            log('Failed to download metadata JSON')
-            return None
-
-        if debug:
-            log(metadata_json)
-
-        try:
-            metadata_and_status = json.loads(metadata_json)
-        except ValueError:
-            log('Failed to parse metadata JSON')
-            return None
-
-        metadata_code = metadata_and_status.get('status', {}).get('code', None)
-        if metadata_code != 200:
-            log(u'Unexpected status code ' + str(metadata_code))
-            return None
-
-        return metadata_and_status.get('data', {})
-
-    def get_akamai_rtmp_url(self, metadata, pageurl):
-        """Parse Akamai stream parameters and return RTMP stream URL."""
-        streamurl = metadata.get('url', None)
-        if not streamurl:
-            log('No url in metadata!')
-            return None
-
-        required_parameters = ['hostname', 'appName', 'streamName', 'authParams']
-        akamai = self.get_xml_nodes(streamurl, required_parameters)
-        if akamai is None or len(akamai) != len(required_parameters):
-            log('Failed to parse Akamai XML')
-            return None
-
-        ident = self.get_xml_nodes('http://%s/fcs/ident' % akamai['hostname'], ['ip'])
-        if ident is None or 'ip' not in ident:
-            log('Failed to parse ident')
-            return None
-        
-        rtmpaddress = 'rtmp://%s/%s?%s?_fcs_vhost=%s&%s' % \
-            (ident['ip'], akamai['appName'], akamai['authParams'],
-             akamai['hostname'], akamai['authParams'])
-
-        if '&slist=' not in akamai['authParams']:
-            log('Live stream not fully supported')
-            return None
-            
-        slist = akamai['authParams'].split('&slist=', 1)[1]
-
-        playpath = '%s?%s&%s' % \
-            (slist, akamai['authParams'], akamai['authParams'])
-        app = '%s?%s?_fcs_vhost=%s&%s' % \
-            (akamai['appName'], akamai['authParams'], akamai['hostname'],
-             akamai['authParams'])
-        tcurl = 'rtmp://%s/%s' % (ident['ip'], playpath)
-
-        rtmpurl = '%s playpath=%s swfUrl=%s tcUrl=%s pageUrl=%s live=1' % \
-            (rtmpaddress, playpath, AREENA_LIVE_SWF, tcurl, pageurl)
-
-        return rtmpurl
-
-    def get_areena_live_rtmp_url(self, metadata, pageurl):
-        """Parse Areena live stream parameters and return RTMP stream
-        URL."""
-        rtmpaddress = metadata.get('url', None)
-        if not rtmpaddress:
-            log('No url in metadata!')
-            return None
-
-        rtmpaddress, playpath = parse_rtmp_single_component_app(rtmpaddress)[:2]
-
-        rtmpurl = '%s playpath=%s swfUrl=%s tcUrl=%s pageUrl=%s conn=S:1 live=1 yleauth=1' % \
-            (rtmpaddress, playpath, AREENA_LIVE_SWF, AREENA_LIVE_TCURL, pageurl)
-        
-        return rtmpurl
-
-    def create_output_filename(self, metadata, destdir):
-        """Construct filename for the stream."""
-        title = metadata.get('title', None) or 'ylelive'
-        date = metadata.get('broadcastDateTime', None)
-        filename = title
-        if date:
-            filename += '-' + date.replace('/', '-').replace(' ', '-')
-        filename += '.flv'
-        filename = sane_filename(filename)
-        if destdir:
-            filename = os.path.join(destdir, filename)
-        filename = next_available_filename(filename)
-        return filename
-
-
-### Areena radio ###
-
-class AreenaRadioDownloader:
-    def download_episodes(self, url, parameters, latest_episode, sublang, destdir):
-        """Download live radio stream at url."""
-        return self.process_radio_stream(url, parameters, destdir, False)
-
-    def print_urls(self, url, latest_episode, sublang='all'):
-        """Extract live radio stream from url and print
-        librtmp-compatible URLs to stdout."""
-        return self.process_radio_stream(url, [], None, True)
-
-    def process_radio_stream(self, url, parameters, destdir, print_url):
-        metadata = self.get_radio_metadata(url)
-        if not metadata:
-            log(u'Failed to download metadata')
-            return RD_FAILED
-
-        rtmpurl = self.get_radio_rtmp_url(metadata, url)
-        if not rtmpurl:
-            return RD_FAILED
-
-        if print_url:
-            print rtmpurl
-            return RD_SUCCESS
-
-        enc = sys.getfilesystemencoding()
-        curtime = time.strftime('-%Y-%m-%d-%H:%M:%S')
-        filename = metadata.get('title', 'yle-radio') + curtime + '.flv'
-        outputparam = []
-        if '-o' not in parameters and '--flv' not in parameters:
-            filename = next_available_filename(filename)
-            outputparam = ['-o', filename.encode(enc, 'replace')]
-
-        args = [rtmpdump_binary]
-        args += ['-r', rtmpurl.encode(enc)]
-        args += parameters
-        args += outputparam
-        if ' live=1' in rtmpurl:
-            args.append('--live')
-
-        outputfile = get_output_filename(args)
-        log_output_file(outputfile)
-
-        retcode = execute_rtmpdump(args)
-        log_output_file(outputfile, True)
-
-        return retcode
-
-    def get_radio_rtmp_url(self, metadata, pageurl):
-        rtmp = metadata.get('url', '')
-        if not rtmp:
-            log(u'No url in metadata!')
-            return None
-
-        rtmpbase, playpath = parse_rtmp_single_component_app(rtmp)[:2]
-
-        rtmpurl = '%s playpath=%s swfUrl=%s tcUrl=%s pageUrl=%s conn=S:0 live=1 yleauth=1' % \
-            (rtmpbase, playpath, AREENA_RADIO_SWF, AREENA_RADIO_TCURL, pageurl)
-        
-        return rtmpurl
-
-    def get_data_id(self, url):
-        if url == 'http://yle.fi/puhe/live':
-            # Yle Puhe's dataid is hidden in the JS code
-            # (http://yle.fi/puhe/js/puhe_pop-up.js). It's hard-coded
-            # here to avoid the need for a full-blown JS parser.
-            return '48'
-
-        html = download_page(url)
-        if not html:
-            return None
-
-        channeltag = re.search(r'<[^>]* id="live-channel"[^>]*>', html)
-        if not channeltag:
-            return None
-
-        dataid = re.search(r' data-id="(\w+)"', channeltag.group(0))
-        if not dataid:
-            return None
-        
-        return dataid.group(1)
-        
-    def get_radio_metadata(self, url):
-        dataid = self.get_data_id(url)
-        if not dataid:
-            return None
-
-        metaurl = 'http://areena.yle.fi/meta/channels/info/%s?lang_id=fin' % dataid
-        metadatastr = download_page(metaurl)
-        if not metadatastr:
-            return None
-
-        try:
-            metadata = json.loads(metadatastr)
-        except ValueError:
-            log(u'Invalid JSON at ' + metaurl)
-            return None
-
-        return metadata.get('data', {})
 
 
 ### Elava Arkisto ###
@@ -926,12 +659,11 @@ class ElavaArkistoDownloader:
 
     def download_single_episode(self, rtmpurl, playpath, downloadURL,
                                 filename, parameters, pageurl):
-        enc = sys.getfilesystemencoding()
-
         if downloadURL:
             log('Downloading from HTTP server...')
             log_output_file(filename)
             
+            enc = sys.getfilesystemencoding()
             try:
                 urllib.urlretrieve(downloadURL, filename.encode(enc))
             except IOError, exc:
@@ -943,10 +675,10 @@ class ElavaArkistoDownloader:
         else:
             args = [rtmpdump_binary]
             args += RTMPDUMP_OPTIONS_ARKISTO
-            args += ['-r', rtmpurl.encode(enc),
-                     '-y', playpath.encode(enc),
-                     '-p', pageurl.encode(enc),
-                     '-o', filename.encode(enc, 'replace')]
+            args += ['-r', rtmpurl,
+                     '-y', playpath,
+                     '-p', pageurl,
+                     '-o', filename]
             args += parameters
 
             outputfile = get_output_filename(args)
@@ -1037,8 +769,7 @@ class ElavaArkistoDownloader:
 ### YleX Areena ###
 
 
-class YleXDownloader:
-
+class YleXDownloader(AreenaNGDownloader):
     def download_episodes(self, url, argv, latest_episode, sublang, destdir):
         """Download a stream from the given YleX Areena url using
         rtmpdump."""
@@ -1060,14 +791,14 @@ class YleXDownloader:
             if not is_resume_job(argv):
                 filename = next_available_filename(filename)
 
-            outputoptions = ['-o', filename.encode(sys.getfilesystemencoding(), 'ignore')]
+            outputoptions = ['-o', filename]
 
-        rtmpurl = self.get_rtmp_url(html, url)
-        if not rtmpurl:
+        rtmpparams = self.get_rtmp_parameters(html, url)
+        if not rtmpparams:
             return RD_FAILED
 
         args = [rtmpdump_binary]
-        args += ['-r', rtmpurl]
+        args += self.rtmp_parameters_to_rtmpdump_args(rtmpparams)
         args += RTMPDUMP_OPTIONS_YLEX
         args += outputoptions
         args += argv
@@ -1089,31 +820,25 @@ class YleXDownloader:
         if not html:
             return RD_FAILED
 
-        rtmpurl = self.get_rtmp_url(html, url)
-        if not rtmpurl:
+        rtmpparams = self.get_rtmp_parameters(html, url)
+        if not rtmpparams:
             return RD_FAILED
 
-        print rtmpurl
+        enc = sys.getfilesystemencoding()
+        print self.rtmp_parameters_to_url(rtmpparams).encode(enc, 'replace')
         return RD_SUCCESS
 
-    def get_rtmp_url(self, html, pageurl):
-        match = re.search(r'jQuery.extend\([^,]*,(.*)\)', html)
+    def get_rtmp_parameters(self, html, pageurl):
+        match = re.search(r'<meta +?property="og:image" +?content="(.+?)" *?/>', html)
         if not match:
             return None
 
-        ylexdata = json.loads(match.group(1).strip())
-
-        enc = sys.getfilesystemencoding()
-        try:
-            clip = ylexdata['YlexAreena']['clip'][0]
-            swf = 'http://ylex.yle.fi' + ylexdata['YlexFlowplayer']['src']
-            return '%s playpath=%s swfUrl=%s pageUrl=%s yleAuth=1' % \
-                (clip['plugins']['bwcheck']['hosts'][0]['host'].encode(enc),
-                 clip['clip']['url'].encode(enc),
-                 swf.encode(enc),
-                 pageurl.encode(enc))
-        except (KeyError, IndexError):
+        match = re.search(r'/([a-fA-F0-9]+)_', match.group(1))
+        if not match:
             return None
+
+        papiurl = 'http://papi.yle.fi/ng/mod/rtmp/%s' % match.group(1)
+        return self.rtmp_parameters_from_papi(papiurl, pageurl, False)
 
 
 ### main program ###
