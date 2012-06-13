@@ -1,6 +1,8 @@
 yle-dl (1.99.9-0+jackyf1~) UNRELEASED; urgency=low
 
   * New upstream release.
+  * debian/{rules,control}:
+    - Stop building rtmpdump-yle, yle-dl now works with stock rtmpdump.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 13 Jun 2012 11:38:42 +0300
 

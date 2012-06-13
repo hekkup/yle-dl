@@ -2,23 +2,14 @@ Source: yle-dl
 Priority: extra
 Section: net
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
-Build-Depends: debhelper (>= 7.0.50~), libssl-dev, libltdl-dev
+Build-Depends: debhelper (>= 7.0.50~)
 Standards-Version: 3.9.3
 
 Package: yle-dl
 Architecture: all
-Depends: ${misc:Depends}, rtmpdump-yle (>= ${binary:Version}),
-  python, python-crypto
+Depends: ${misc:Depends}, rtmpdump, python, python-crypto
 Description: downloader of media files from YLE
  Yle-dl is a command-line program for downloading media files
  from the two video streaming services of the Finnish national
  broadcasting company Yle: Yle Areena, http://areena.yle.fi/, and Elävä
  Arkisto, http://www.yle.fi/elavaarkisto/.
-
-Package: rtmpdump-yle
-Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: dumper for media content streamed over the RTMP protocol
- This package contains rtmpdump, built with YLE download plugin.
- .
- See also descriptions of packages 'yle-dl' and 'rtmpdump'.

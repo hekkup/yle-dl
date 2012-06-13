@@ -4,13 +4,8 @@
 	dh $@
 
 override_dh_auto_build:
-	dh_auto_build -- SHARED= LIB_RTMP="librtmp/librtmp.a -lltdl -rdynamic"
+
 
 override_dh_auto_install:
-	dh_auto_install -- DESTDIR=$(CURDIR)/debian/tmp SHARED=
 	dh_install -pyle-dl yle-dl usr/bin
-	dh_install -prtmpdump-yle --autodest usr/local/bin/rtmpdump usr/local/lib/librtmp/plugins
-
-override_dh_usrlocal:
-
 
