@@ -7,7 +7,7 @@ Copyrights:
    Copyright (C) 2005-2008 Team XBMC http://www.xbmc.org
    Copyright (C) 2008-2009 Andrej Stepanchuk
    Copyright (C) 2009-2010 Howard Chu
-   Copyright (C) 2009-2011 Antti Ajanki
+   Copyright (C) 2009-2013 Antti Ajanki
 
 Files: librtmp/*
 License: LGPLv2.1+
@@ -45,4 +45,4 @@ License: GPLv2+
    http://www.gnu.org/copyleft/gpl.html
 
 Debian packaging is © Eugene V. Lyubimkin <jackyf@debian.org> under GPLv3+.
-
+Ubuntu packaging (c) Henrik Pitkala <hpitkala@hotmail.com> under GPLv3+.

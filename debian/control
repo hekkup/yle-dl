@@ -1,13 +1,13 @@
 Source: yle-dl
 Priority: extra
 Section: net
-Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
+Maintainer: Henrik Pitkala <hpitkala@hotmail.com>
 Build-Depends: debhelper (>= 7.0.50~)
 Standards-Version: 3.9.3
 
 Package: yle-dl
 Architecture: all
-Depends: ${misc:Depends}, rtmpdump, python, python-crypto
+Depends: rtmpdump, python, python-crypto
 Description: downloader of media files from YLE
  Yle-dl is a command-line program for downloading media files
  from the two video streaming services of the Finnish national
