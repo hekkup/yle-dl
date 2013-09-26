@@ -1,6 +1,6 @@
 yle-dl (2.1.0-0+jackyf2) UNRELEASED; urgency=low
 
-  * 
+  * [hekkup] Added manpage doc/yle-dl.1.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 26 Sep 2013 21:16:41 +0300
 
