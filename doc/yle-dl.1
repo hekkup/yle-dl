@@ -1,0 +1,68 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.TH YLE-DL 1 "Sep 24, 2013"
+.\" Please adjust this date whenever revising the manpage.
+.SH NAME
+yle-dl \- downloader of media files from YLE
+.SH SYNOPSIS
+.B yle-dl
+[yle-dl/rtmpdump options]
+URL
+.SH DESCRIPTION
+This manual page documents briefly the usage of \fByle-dl\fP.
+.PP
+\fByle-dl\fP is a \fBrtmpdump\fP frontend for downloading media files from the
+streaming services of the Finnish national broadcasting company Yle:
+Yle Areena, YleX Areena and Elävä Arkisto.
+.SH PARAMETERS
+.TP
+.B URL
+URL is the address of the Areena or Elävä arkisto web page where
+you would normally watch the video in a browser.
+.TP
+.B \-h, \-\-help
+Show help for both yle-dl and rtmpdump.
+.TP
+.B \-\-latestepisode
+Download the latest episodes
+.TP
+.B \-\-showurl
+Print librtmp-compatible URL, don't download
+.TP
+.B \-\-showtitle
+Print stream title, don't download
+.TP
+.B \-\-vfat
+Create Windows-compatible filenames
+.TP
+.B \-\-sublang LANG
+Download subtitles, LANG = fin, swe, smi, none or all
+.TP
+.B \-\-rtmpdump PATH
+Set PATH to rtmpdump binary
+.TP
+.B \-\-destdir DIR
+Save files to DIR
+.SH NOTES
+\fByle-dl\fP also takes \fBrtmpdump\fP options which are shown by --help.
+For full details, please refer to \fBrtmpdump\fP manual page.
+.SH EXAMPLES
+Download video from URL, output to video.flv (-o is \fBrtmpdump\fP option):
+.PP
+  yle-dl http://areena.yle.fi/tv/1544491 -o video.flv
+.PP
+Load from URL containing special characters (maybe a part of series etc.):
+.PP
+  yle-dl "http://www.yle.fi/elavaarkisto/?s=s&g=4&ag=28&t=&a=9390"
+.PP
+Get URL of the stream and play the stream in mplayer (or vlc or other
+media player):
+.PP
+  mplayer "`yle-dl --showurl http://areena.yle.fi/tv/1544491`"
+.SH SEE ALSO
+\fBrtmpdump\fP(1), \fByle-downloader-gui\fP(1)
+.SH AUTHORS
+Antti Ajanki <antti.ajanki@iki.fi>
+.br
+& team @ GitHub
+.br
+Manual page converted from README by Henrik Pitkala <hpitkala@hotmail.com>.
