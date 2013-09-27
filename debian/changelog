@@ -1,3 +1,10 @@
+yle-dl (2.1.0-0+jackyf1-hekkup2-precise1) precise; urgency=low
+
+  * Replacing rtmpdump-yle package
+  * Fixed Launchpad PPA link in README*
+
+ -- Henrik Pitkälä <hpitkala@hotmail.com>  Fri, 27 Sep 1013 11:23:00 +0300
+
 yle-dl (2.1.0-0+jackyf1-hekkup1-precise1) precise; urgency=low
 
   * The first release for Ubuntu
