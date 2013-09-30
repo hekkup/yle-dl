@@ -8,6 +8,7 @@ Standards-Version: 3.9.3
 Package: yle-dl
 Architecture: all
 Depends: rtmpdump, python, python-crypto
+Conflicts: rtmpdump-yle
 Replaces: rtmpdump-yle
 Description: downloader of media files from YLE
  Yle-dl is a command-line program for downloading media files
