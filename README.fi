@@ -1,5 +1,5 @@
 Apuohjelma videoiden lataamiseen Yle Areenasta
-Copyright (C) 2010-2013 Antti Ajanki
+Copyright (C) 2010-2014 Antti Ajanki, antti.ajanki@iki.fi
 Ohjelmistolisenssi: GPLv2
 Kotisivu: http://aajanki.github.com/yle-dl/
 Lähdekoodi: https://github.com/aajanki/yle-dl
@@ -12,9 +12,9 @@ Asennus
 -------
 
 Asenna vaaditut kirjastot ja ohjelmat: rtmpdump (2.4 tai uudempi),
-python ja pycrypto.
+python (2.6 tai uudempi) ja pycrypto.
 
-Debianissa ja Ubuntussa nämä löytyvät paketeista rtmpdump, python ja
+Debianissa nämä löytyvät paketeista rtmpdump, python ja
 python-crypto.
 
 OS X:ssä rtmpdumpin voi asentaa homebrew:llä ``brew install --HEAD
@@ -31,6 +31,12 @@ Alkaen versiosta 1.99.9 yle-dl:stä ei enää tarvitse Ylen palvelimia
 varten muunneltua kopiota rtmpdump-ohjelmasta. Aikaisemman
 yle-dl-version mukana asennetun rtmpdumpin ja pluginin voi poistaa
 komentamalla pääkäyttäjänä "make uninstall-old-rtmpdump".
+
+Valmiit asennuspaketit
+----------------------
+
+Katso lista saatavilla olevista asennuspaketeista osoitteesta
+http://aajanki.github.io/yle-dl/
 
 RPM-paketointi:
 
