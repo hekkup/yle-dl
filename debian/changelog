@@ -1,3 +1,9 @@
+yle-dl (2.2.1-0+hekkup1~) unstable; urgency=low
+
+  * New upstream release 2.2.1
+
+ -- Henrik Pitkala <hpitkala@hotmail.com>  Fri, 18 Apr 2014 19:17:05 +0300
+
 yle-dl (2.1.0-0+jackyf2~) UNRELEASED; urgency=low
 
   * [hekkup] Added manpage doc/yle-dl.1.

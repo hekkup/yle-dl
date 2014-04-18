@@ -1,8 +1,8 @@
 .\"                                      Hey, EMACS: -*- nroff -*-
-.TH YLE-DL 1 "Sep 24, 2013"
+.TH YLE-DL 1 "Apr 18, 2014"
 .\" Please adjust this date whenever revising the manpage.
 .SH NAME
-yle-dl \- downloader of media files from YLE
+yle-dl \- download media files from YLE
 .SH SYNOPSIS
 .B yle-dl
 [yle-dl/rtmpdump options]
@@ -12,7 +12,7 @@ This manual page documents briefly the usage of \fByle-dl\fP.
 .PP
 \fByle-dl\fP is a \fBrtmpdump\fP frontend for downloading media files from the
 streaming services of the Finnish national broadcasting company Yle:
-Yle Areena, YleX Areena and Elävä Arkisto.
+Yle Areena, YleX Areena, and Elävä Arkisto.
 .SH PARAMETERS
 .TP
 .B URL
@@ -23,10 +23,13 @@ you would normally watch the video in a browser.
 Show help for both yle-dl and rtmpdump.
 .TP
 .B \-\-latestepisode
-Download the latest episodes
+Download the latest episode of series
 .TP
 .B \-\-showurl
 Print librtmp-compatible URL, don't download
+.TP
+.B \-\-showepisodepage
+Print web page URL of each episode of series
 .TP
 .B \-\-showtitle
 Print stream title, don't download
@@ -36,6 +39,13 @@ Create Windows-compatible filenames
 .TP
 .B \-\-sublang LANG
 Download subtitles, LANG = fin, swe, smi, none or all
+.TP
+.B \-\-hardsubs
+Download stream with hard subs if available
+.TP
+.B \-\-maxbitrate RATE
+Maximum bitrate of stream to download, either integer in kB/s
+or "best" or "worst"
 .TP
 .B \-\-rtmpdump PATH
 Set PATH to rtmpdump binary
@@ -65,4 +75,5 @@ Antti Ajanki <antti.ajanki@iki.fi>
 .br
 & team @ GitHub
 .br
-Manual page converted from README by Henrik Pitkala <hpitkala@hotmail.com>.
+Manual page converted from README and --help by Henrik Pitkala
+<hpitkala@hotmail.com>.

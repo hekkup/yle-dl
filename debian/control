@@ -1,7 +1,7 @@
 Source: yle-dl
 Priority: extra
 Section: net
-Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
+Maintainer: Henrik Pitkala <hpitkala@hotmail.com>
 Build-Depends: debhelper (>= 7.0.50~)
 Standards-Version: 3.9.3
 
