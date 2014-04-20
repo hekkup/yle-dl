@@ -1,5 +1,5 @@
 Apuohjelma videoiden lataamiseen Yle Areenasta
-Copyright (C) 2010-2013 Antti Ajanki
+Copyright (C) 2010-2014 Antti Ajanki
 Ohjelmistolisenssi: GPLv2
 Kotisivu: http://aajanki.github.com/yle-dl/
 Lähdekoodi: https://github.com/aajanki/yle-dl
@@ -12,7 +12,7 @@ Asennus
 -------
 
 Ubuntu-paketit löytyvät osoitteesta
-https://launchpad.net/~hekkup/+archive/yle-dl.
+https://launchpad.net/~yle-dl/+archive/release.
 
 Muissa järjestelmissä asenna vaaditut kirjastot ja ohjelmat:
 rtmpdump (2.4 tai uudempi), python ja pycrypto.
