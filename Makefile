@@ -1,5 +1,6 @@
-prefix?=/usr/local
-BINDIR=$(DESTDIR)/$(prefix)/bin
+# DESTDIR used by Debian
+prefix?=$(DESTDIR)/usr/local
+BINDIR=$(prefix)/bin
 
 all:
 
@@ -11,12 +12,9 @@ uninstall:
 	rm -f $(BINDIR)/yle-dl
 
 # Uninstall librtmp and plugin installed by pre-2.0 versions
-plugindir=$(prefix)/lib/librtmp/plugins
-mandir=$(prefix)/man
-libdir=$(prefix)/lib
-PLUGINDIR=$(DESTDIR)$(plugindir)
-MANDIR=$(DESTDIR)$(mandir)
-LIBDIR=$(DESTDIR)$(libdir)
+PLUGINDIR=$(prefix)/lib/librtmp/plugins
+MANDIR=$(prefix)/man
+LIBDIR=$(prefix)/lib
 uninstall-old-rtmpdump:
 	rm -f $(BINDIR)/rtmpdump
 	rm -f $(BINDIR)/rtmpdump-yle
