@@ -55,6 +55,8 @@ Save files to DIR
 .SH NOTES
 \fByle-dl\fP also takes \fBrtmpdump\fP options which are shown by --help.
 For full details, please refer to \fBrtmpdump\fP manual page.
+.PP
+Firewall must allow outgoing traffic on ports 80 and 1935.
 .SH EXAMPLES
 Download video from URL, output to video.flv (-o is \fBrtmpdump\fP option):
 .PP
@@ -69,7 +71,7 @@ media player):
 .PP
   mplayer "`yle-dl --showurl http://areena.yle.fi/tv/1544491`"
 .SH SEE ALSO
-\fBrtmpdump\fP(1), \fByle-downloader-gui\fP(1)
+\fBrtmpdump\fP(1), \fBqyledl\fP(1)
 .SH AUTHORS
 Antti Ajanki <antti.ajanki@iki.fi>
 .br

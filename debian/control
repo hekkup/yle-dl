@@ -1,9 +1,9 @@
 Source: yle-dl
 Priority: extra
 Section: net
-Maintainer: Henrik Pitkala <hpitkala@hotmail.com>
+Maintainer: Henrik Pitkälä <hpitkala@hotmail.com>
 Build-Depends: debhelper (>= 7.0.50~)
-Standards-Version: 3.9.3
+Standards-Version: 3.9.5
 
 Package: yle-dl
 Architecture: all
